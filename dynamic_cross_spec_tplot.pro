@@ -14,9 +14,9 @@ FUNCTION FFT_series,field,seconds,Nspec,Point_Num,lapping_index,zero_pad=zp
 
 ;zp = 0
 ;if keyword_set(zp) then begin
-;	;Zero-pad these arrays to speed up FFT	
+;	;Zero-pad these arrays to speed up FFT
 ;	fac = 1
-;	while 2L^fac lt n_elements(field) do fac++	
+;	while 2L^fac lt n_elements(field) do fac++
 ;	addarr = fltarr(2L^fac - n_elements(field))  ;array of zeros
 ;;stop
 ;	field = [field,addarr]
@@ -58,7 +58,7 @@ FUNCTION Phase_spectra,FFT_field_1,FFT_field_2,seconds,Nspec,point_num_1,point_n
   return,Phase
 END
 
-;Average Power Spectrum Density,PSD  
+;Average Power Spectrum Density,PSD
 FUNCTION Pow_Spectra,FFT_field,seconds,Nspec,point_num,lapping_index
   New_Nspec=lapping_index*(Nspec-1)+1
   Nfft=LONG64(Point_num/Nspec)
@@ -66,7 +66,7 @@ FUNCTION Pow_Spectra,FFT_field,seconds,Nspec,point_num,lapping_index
   for mm=0,New_Nspec-1 do Pspecaverage=Pspecaverage+ABS(FFT_field[*,mm])^2/float(New_Nspec)
   Pspecaverage=Pspecaverage*2*seconds/float(nspec)
   Return,Pspecaverage
-END       
+END
 
 ;Coherence spectrum of two arbitary components,cross correlation function
 FUNCTION Coherence_spectra,FFT_field_1,FFT_field_2,seconds,Nspec,point_num_1,point_num_2,pow_1,pow_2,lapping_index
@@ -77,7 +77,7 @@ FUNCTION Coherence_spectra,FFT_field_1,FFT_field_2,seconds,Nspec,point_num_1,poi
   for nn=0,New_Nspec-1 do begin
      G_1_2=G_1_2+(2*seconds/nspec)*(FFT_field_1[*,nn]*Conj(FFT_field_2[*,nn]))/Float(New_Nspec)
   Endfor
-  Correlation=ABS(G_1_2)/(pow_1*pow_2)^0.5 
+  Correlation=ABS(G_1_2)/(pow_1*pow_2)^0.5
   return,correlation
 END
 
@@ -100,13 +100,13 @@ Pro dynamic_cross_spec_tplot,var1_name,var1_y_dim,var2_name,var2_y_dim,T1,T2,win
   values1 = reform(d_temp[*,1:n_elements(var1_y_dim)])
   values1_interp=interpol(values1,time_array,time_array)
   E_num=Long64(n_elements(time_array))
-  data_rate=1.0/mean(time_array[2:12]-time_array[1:11],/nan)
 
+;***Original method. This isn't very robust and can be way wrong.
+;  data_rate=1.0/mean(time_array[2:12]-time_array[1:11],/nan)
 
-
-;*****
-;data_rate = 1/4.
-;*****
+;***New method...much more robust.
+  boogoo = rbsp_sample_rate(time_array,out_med_avg=medavg,average=avg)
+  data_rate = medavg[0]
 
 
 
@@ -133,13 +133,15 @@ Pro dynamic_cross_spec_tplot,var1_name,var1_y_dim,var2_name,var2_y_dim,T1,T2,win
 ;zero_pad = 0
 ;if keyword_set(zero_pad) then begin
 ;	fac = 1
-;	while 2L^fac lt Enfft do fac++	
+;	while 2L^fac lt Enfft do fac++
 ;	Enfft = 2L^fac
 ;endif
 
 
 
   E_FREQUENCE_coordinate=Nspec*findgen(Enfft/2+1)/window
+
+
 
   New_time_array=!values.f_nan
   dynamic_FFT_1=make_array(n_elements(E_FREQUENCE_coordinate),/double) & dynamic_FFT_1[*]=!values.f_nan
@@ -211,9 +213,3 @@ Pro dynamic_cross_spec_tplot,var1_name,var1_y_dim,var2_name,var2_y_dim,T1,T2,win
 ;options,new_name+'_coherence','title','window='+A+',lag='+B+',data_rate='+C+'/s'+', coherence '+D+'s'
 
 END
-
-
-
-
-
-
