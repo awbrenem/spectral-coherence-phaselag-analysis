@@ -126,13 +126,14 @@ pro aaron_chaston_polarization,quanx,quany,quanz,start,totpoints,rotatefield,pol
 nopoints=totpoints
 
 ;;if not keyword_set(ylmt) then ylmt=4000
-if not keyword_set(ylmt) then ylmt=fix(sampfreq)/2
-if n_elements(npts) eq 0 then nopfft=128 else nopfft=npts ;no. of points in FFT
-steplength = nopfft/2                           ; Overlap between sucessive FFT bins
+;if not keyword_set(ylmt) then ylmt=fix(sampfreq)/2
+if not keyword_set(ylmt) then ylmt=floor(sampfreq)/2d
+if n_elements(npts) eq 0. then nopfft=128. else nopfft=npts ;no. of points in FFT
+steplength = nopfft/2.                           ; Overlap between sucessive FFT bins
 nosteps=(nopoints-nopfft)/steplength            ;total number of FFTs 
 leveltplot=0.0025                                ;power rejection level 0 to 1
 lam=dblarr(2)
-nosmbins=7                                      ;No. of bins in frequency domain
+nosmbins=7.                                      ;No. of bins in frequency domain
 ;!p.charsize=2                                  ;to include in smoothing
                                                 ; (must be odd)
 aa=[0.024,0.093,0.232,0.301,0.232,0.093,0.024]  ;smoothing profile based on
@@ -209,8 +210,8 @@ halfspecz=Make_Array(nosteps,nopfft/2,/dcomplex)
    ;ymag=get_fa_fields(quany, start, NPTS=totpoints)
    ;zmag=get_fa_fields(quanz, start, NPTS=totpoints)
 
-   sampfreq=1/(xmag.x(1)-xmag.x(0))
-   endsampfreq=1/(xmag.x(totpoints-1)-xmag.x(totpoints-2))
+   ;sampfreq=1/(xmag.x[1]-xmag.x[0])
+   endsampfreq=1/(xmag.x[totpoints-1]-xmag.x[totpoints-2])
    print,' '
    if sampfreq NE endsampfreq then print,'Warning ac file sampling ' + $
   'frequency changes',sampfreq,'Hz to',endsampfreq,'Hz' else print,'ac ' + $
@@ -222,38 +223,41 @@ halfspecz=Make_Array(nosteps,nopfft/2,/dcomplex)
    print,'rotating to field aligned coords'
    ;xdmag=get_fa_fields('Mag1dc_S', start, NPTS=2,/calibrate)
 
-   sampfreqdc=1/(xdmag.time(1)-xdmag.time(0))
-   dcpoints=abs(totpoints*(sampfreqdc/sampfreq))+1
+   sampfreqdc=1./(xdmag.time[1]-xdmag.time[0])
+   dcpoints=abs(totpoints*(sampfreqdc/sampfreq))+1.
    print, dcpoints
     ;xdmag=get_fa_fields('Mag1dc_S', start, NPTS=dcpoints,/calibrate)
     ;ydmag=get_fa_fields('Mag2dc_S', start, NPTS=dcpoints,/calibrate)
     ;zdmag=get_fa_fields('Mag3dc_S', start, NPTS=dcpoints,/calibrate)
-    countdc=0
-    endfreqdc=1/(xdmag.time(dcpoints-1)-xdmag.time(dcpoints-2))
+    countdc=0.
+    endfreqdc=1./(xdmag.time(dcpoints-1.)-xdmag.time(dcpoints-2.))
     print,' '
     if sampfreqdc NE endfreqdc then print,'Warning dc file sampling ' + $
     'frequency changes',sampfreqdc,'Hz to',endfreqdc,'Hz' else print,'dc ' + $
     'file sampling frequency', sampfreqdc,'Hz'
-     for j=0L,totpoints-1 DO BEGIN
+     for j=0L,totpoints-1. DO BEGIN
      if                                                     $
       (ABS(j/(sampfreq/sampfreqdc)-round(j/(sampfreq/sampfreqdc)))) LT 0.00001 $
       then begin
     
-       dcx=xdmag.comp1(countdc)
-       dcy=ydmag.comp1(countdc)
-       dcz=zdmag.comp1(countdc)
-       countdc=countdc+1
+       dcx=xdmag.comp1[countdc]
+       dcy=ydmag.comp1[countdc]
+       dcz=zdmag.comp1[countdc]
+       countdc=countdc+1.
       ;print, countdc
      endif    
-   fields(*,j)=fieldrot(dcx,-dcy,dcz,xmag.comp1(j)*cos(21/180*!DPI),     $
-              -ymag.comp1(j),xmag.comp1(j)*sin(21/180*!DPI)+zmag.comp1(j))
+   ;fields(*,j)=fieldrot(dcx,-dcy,dcz,xmag.comp1(j)*cos(21/180*!DPI),     $
+   ;           -ymag.comp1(j),xmag.comp1(j)*sin(21/180*!DPI)+zmag.comp1(j))
+   fields[*,j]=fieldrot(dcx,-dcy,dcz,xmag.comp1[j]*cos(21/180*!DPI),     $
+              -ymag.comp1[j],xmag.comp1[j]*sin(21/180.*!DPI)+zmag.comp1[j])
   endfor
+
 
 ;SET TIME SERIES TO BE ANALYSED
 
-   xs=fields(0,*)
-   ys=fields(1,*)
-   zs=fields(2,*)
+   xs=fields[0,*]
+   ys=fields[1,*]
+   zs=fields[2,*]
 
   endif else begin
     
@@ -318,11 +322,11 @@ window, 0, xsize=800, ysize=900
 ;store_data,'CYC',data={x:totmag.time,y:cycdfreq}
 ;RANDOM TIME SERIES GENERATION
 
-A=1
-B=1
-C=1
+A=1.
+B=1.
+C=1.
 
-phix=0
+phix=0.
 phiy=0.25*3.14151
 phiz=3.14151/2
 
@@ -346,40 +350,40 @@ phiz=3.14151/2
 print,' '
 print, 'Total number of steps',nosteps
 print,' '
-for j=0,(nosteps-1) do begin
+for j=0L,(nosteps-1.) do begin
 if (j mod 100) eq 0 then print,'Step',j
 
 ;FFT CALCULATION
 
      smooth=0.08+0.46*(1-cos(2*!DPI*findgen(nopfft)/nopfft))    
-     tempx=smooth*xs(0:nopfft-1)
-     tempy=smooth*ys(0:nopfft-1)
-     tempz=smooth*zs(0:nopfft-1)		
-     specx(j,*)=(fft(tempx,/double));+Complex(0,j*steplength*3.1415/32))
-     specy(j,*)=(fft(tempy,/double));+Complex(0,j*steplength*3.1415/32))
-     specz(j,*)=(fft(tempz,/double));+Complex(0,j*steplength*3.1415/32))
-     halfspecx(j,*)=specx(j,0:(nopfft/2-1))
-     halfspecy(j,*)=specy(j,0:(nopfft/2-1))
-     halfspecz(j,*)=specz(j,0:(nopfft/2-1))
+     tempx=smooth*xs[0:nopfft-1]
+     tempy=smooth*ys[0:nopfft-1]
+     tempz=smooth*zs[0:nopfft-1]		
+     specx[j,*]=(fft(tempx,/double));+Complex(0,j*steplength*3.1415/32))
+     specy[j,*]=(fft(tempy,/double));+Complex(0,j*steplength*3.1415/32))
+     specz[j,*]=(fft(tempz,/double));+Complex(0,j*steplength*3.1415/32))
+     halfspecx[j,*]=specx[j,0:(nopfft/2-1)]
+     halfspecy[j,*]=specy[j,0:(nopfft/2-1)]
+     halfspecz[j,*]=specz[j,0:(nopfft/2-1)]
      xs=shift(xs,-steplength)
      ys=shift(ys,-steplength)
      zs=shift(zs,-steplength)
      
 ;CALCULATION OF THE SPECTRAL MATRIX
      
-    matspec(j,*,0,0)=halfspecx(j,*)*conj(halfspecx(j,*))
-    matspec(j,*,1,0)=halfspecx(j,*)*conj(halfspecy(j,*))
-    matspec(j,*,2,0)=halfspecx(j,*)*conj(halfspecz(j,*))
-    matspec(j,*,0,1)=halfspecy(j,*)*conj(halfspecx(j,*))
-    matspec(j,*,1,1)=halfspecy(j,*)*conj(halfspecy(j,*))
-    matspec(j,*,2,1)=halfspecy(j,*)*conj(halfspecz(j,*))
-    matspec(j,*,0,2)=halfspecz(j,*)*conj(halfspecx(j,*))
-    matspec(j,*,1,2)=halfspecz(j,*)*conj(halfspecy(j,*))
-    matspec(j,*,2,2)=halfspecz(j,*)*conj(halfspecz(j,*))
+    matspec[j,*,0,0]=halfspecx[j,*]*conj(halfspecx[j,*])
+    matspec[j,*,1,0]=halfspecx[j,*]*conj(halfspecy[j,*])
+    matspec[j,*,2,0]=halfspecx[j,*]*conj(halfspecz[j,*])
+    matspec[j,*,0,1]=halfspecy[j,*]*conj(halfspecx[j,*])
+    matspec[j,*,1,1]=halfspecy[j,*]*conj(halfspecy[j,*])
+    matspec[j,*,2,1]=halfspecy[j,*]*conj(halfspecz[j,*])
+    matspec[j,*,0,2]=halfspecz[j,*]*conj(halfspecx[j,*])
+    matspec[j,*,1,2]=halfspecz[j,*]*conj(halfspecy[j,*])
+    matspec[j,*,2,2]=halfspecz[j,*]*conj(halfspecz[j,*])
 
 ;CALCULATION OF SMOOTHED SPECTRAL MATRIX
     
-     for k=(nosmbins-1)/2, (nopfft/2-1)-(nosmbins-1)/2 do begin
+     for k=(nosmbins-1)/2., (nopfft/2.-1)-(nosmbins-1)/2. do begin
           ematspec(j,k,0,0)=TOTAL(aa(0:(nosmbins-1))                  $
                          *matspec(j,(k-(nosmbins-1)/2):(k+(nosmbins-1)/2),0,0))
           ematspec(j,k,1,0)=TOTAL(aa(0:(nosmbins-1))                  $
@@ -557,8 +561,10 @@ h=(helic(*,*,0)+helic(*,*,1)+helic(*,*,2))/3
 
 ;CREATING STRUCTURES FOR TPLOT
 
-timeline=str_to_time(start)+ABS(nopfft/2)/sampfreq+findgen(nosteps)   $
+timeline=str_to_time(start)+ABS(nopfft/2.)/sampfreq+findgen(nosteps)   $
         *steplength/sampfreq
+
+stop
 ;print,timeline
 binwidth=sampfreq/nopfft
 freqline=binwidth*findgen(nopfft/2)
